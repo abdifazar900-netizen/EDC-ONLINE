@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Data Transaksi CSV</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .description {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px dashed #adb5bd;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f5ff;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 15px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+        }
+        
+        .file-input-label:hover {
+            background: #5a6fd5;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            margin: 5px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn:hover {
+            background: #5a6fd5;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-export {
+            background: #28a745;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-export:hover {
+            background: #218838;
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.5);
+        }
+        
+        .btn-reset {
+            background: #dc3545;
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-reset:hover {
+            background: #c82333;
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.5);
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .filter-title {
+            font-size: 1.2rem;
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .filter-title i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .filter-group {
+            margin-bottom: 10px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: transform 0.3s;
+            border-top: 5px solid;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #6c757d;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .card p {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #343a40;
+        }
+        
+        .card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .card.online {
+            border-color: #3498db;
+        }
+        
+        .card.online i {
+            color: #3498db;
+        }
+        
+        .card.offline {
+            border-color: #e74c3c;
+        }
+        
+        .card.offline i {
+            color: #e74c3c;
+        }
+        
+        .card.percentage {
+            border-color: #27ae60;
+        }
+        
+        .card.percentage i {
+            color: #27ae60;
+        }
+        
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #343a40;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        th {
+            background: #000000;
+            color: white;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+            border: 2px solid #000000;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s;
+        }
+        
+        th:hover {
+            background: #333333;
+        }
+        
+        th i {
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e8f4fc;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 992px) {
+            .charts {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                min-width: 100%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .pagination button {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .pagination button:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+        }
+        
+        .pagination-info {
+            text-align: center;
+            margin-top: 10px;
+            color: #6c757d;
+        }
+        
+        .percentage-cell {
+            font-weight: bold;
+        }
+        
+        .percentage-cell.high {
+            color: #27ae60;
+        }
+        
+        .percentage-cell.medium {
+            color: #f39c12;
+        }
+        
+        .percentage-cell.low {
+            color: #e74c3c;
+        }
+        
+        .percentage-cell.negative {
+            color: #e74c3c;
+        }
+        
+        .validation-error {
+            color: #e74c3c;
+            font-weight: bold;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .date-filter-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .date-filter-container input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-file-csv"></i> Laporan Data Transaksi CSV</h1>
+        <p class="description">Unggah file CSV dengan pemisah | untuk menghasilkan laporan transaksi dengan filter lengkap</p>
+    </header>
+    
+    <div class="container">
+        <div class="upload-section">
+            <h2><i class="fas fa-cloud-upload-alt"></i> Unggah File CSV</h2>
+            <p>File CSV harus menggunakan pemisah | (pipe) dan data dimulai dari baris ke-7</p>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="csvFile" accept=".csv" class="file-input">
+                <label for="csvFile" class="file-input-label"><i class="fas fa-file-upload"></i> Pilih File CSV</label>
+            </div>
+            <div id="fileName" class="file-name">Belum ada file dipilih</div>
+            
+            <button class="btn" onclick="processCSV()"><i class="fas fa-cogs"></i> Proses CSV</button>
+        </div>
+        
+        <div id="reportSection" class="hidden">
+            <div class="filter-section">
+                <h3 class="filter-title"><i class="fas fa-filter"></i> Filter Data</h3>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="filterToko">TOKO</label>
+                        <select id="filterToko" onchange="applyFilters()">
+                            <option value="">Semua Toko</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterTanggal">TANGGAL_TRX</label>
+                        <select id="filterTanggal" onchange="applyFilters()">
+                            <option value="">Semua Tanggal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="validationMessage" class="validation-error hidden">
+                Terdapat ketidaksesuaian data antara Total TRX dan detail EDC. Silakan periksa data sumber.
+            </div>
+            
+            <div class="summary-cards">
+                <div class="card online">
+                    <i class="fas fa-wifi"></i>
+                    <h3>Total Transaksi Online</h3>
+                    <p id="totalOnline">0</p>
+                </div>
+                <div class="card offline">
+                    <i class="fas fa-store-slash"></i>
+                    <h3>Total Transaksi Offline</h3>
+                    <p id="totalOffline">0</p>
+                </div>
+                <div class="card percentage">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>Persentase Online</h3>
+                    <p id="percentageOnline">0%</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-credit-card"></i>
+                    <h3>Total EDC MDR</h3>
+                    <p id="totalEdcMdr">0</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-credit-card"></i>
+                    <h3>Total EDC BCA</h3>
+                    <p id="totalEdcBca">0</p>
+                </div>
+            </div>
+            
+            <div class="charts">
+                <div class="chart-container">
+                    <h3 class="chart-title">Persentase Transaksi Online vs Offline</h3>
+                    <canvas id="transactionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Distribusi Jenis EDC</h3>
+                    <canvas id="edcChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-export" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Ekspor ke Excel</button>
+                <button class="btn btn-reset" onclick="resetFilters()"><i class="fas fa-redo"></i> Reset Filter</button>
+            </div>
+            
+            <div class="table-container">
+                <table id="reportTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">TOKO <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(1)">TANGGAL_TRX <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(2)">Total TRX Online <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(3)">Total TRX Offline <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(4)">Persentase Online <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(5)">EDC MDR Online <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(6)">EDC MDR Offline <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(7)">Persentase Online EDC MDR <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(8)">Persentase Offline EDC MDR <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(9)">EDC BCA Online <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(10)">EDC BCA Offline <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(11)">Persentase Online EDC BCA <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(12)">Persentase Offline EDC BCA <i class="fas fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <button id="prevPage" onclick="changePage(-1)">Sebelumnya</button>
+                <button id="nextPage" onclick="changePage(1)">Selanjutnya</button>
+            </div>
+            <div class="pagination-info">
+                Menampilkan <span id="currentItems">0</span> dari <span id="totalItems">0</span> data
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let processedData = [];
+        let filteredData = [];
+        let transactionChartInstance = null;
+        let edcChartInstance = null;
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let allTokos = [];
+        let allDates = [];
+        let currentSortColumn = -1;
+        let sortDirection = 1; // 1 untuk ascending, -1 untuk descending
+
+        // Event listener untuk menampilkan nama file
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'Belum ada file dipilih';
+            document.getElementById('fileName').textContent = fileName;
+        });
+
+        function processCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Silakan pilih file CSV terlebih dahulu.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvData = e.target.result;
+                
+                // Memproses data baris per baris
+                const allTextLines = csvData.split(/\r\n|\n/);
+                
+                // Mengambil data mulai dari baris ke-7 (indeks 6)
+                const dataFromRow7 = allTextLines.slice(6);
+                
+                // Baris pertama dari data yang diambil (baris ke-7 secara keseluruhan) adalah header
+                const headers = dataFromRow7[0].split('|').map(header => header.trim());
+                
+                // Memproses data dari baris ke-8 dan seterusnya
+                const dataRows = dataFromRow7.slice(1).filter(row => row.trim() !== '');
+                
+                // Memetakan data dengan header
+                const mappedData = dataRows.map(row => {
+                    const values = row.split('|').map(value => value.trim());
+                    const obj = {};
+                    headers.forEach((header, i) => {
+                        obj[header] = values[i] || '';
+                    });
+                    return obj;
+                });
+                
+                // Memproses data untuk laporan
+                processDataForReport(mappedData);
+            };
+            reader.readAsText(file);
+        }
+
+        function processDataForReport(data) {
+            // Mengelompokkan data berdasarkan TOKO dan TANGGAL_TRX
+            const groupedData = {};
+            allTokos = [];
+            allDates = [];
+            
+            data.forEach(item => {
+                // Pastikan TOKO dan TANGGAL_TRX ada
+                if (!item.TOKO || !item.TANGGAL_TRX) return;
+                
+                const key = `${item.TOKO}|${item.TANGGAL_TRX}`;
+                
+                if (!groupedData[key]) {
+                    groupedData[key] = {
+                        TOKO: item.TOKO,
+                        TANGGAL_TRX: item.TANGGAL_TRX,
+                        totalOnline: 0,
+                        totalOffline: 0,
+                        edcTypes: {
+                            'EDC MDR': { online: 0, offline: 0 },
+                            'EDC BCA': { online: 0, offline: 0 }
+                        }
+                    };
+                    
+                    // Kumpulkan semua toko unik
+                    if (!allTokos.includes(item.TOKO)) {
+                        allTokos.push(item.TOKO);
+                    }
+                    
+                    // Kumpulkan semua tanggal unik
+                    if (!allDates.includes(item.TANGGAL_TRX)) {
+                        allDates.push(item.TANGGAL_TRX);
+                    }
+                }
+                
+                // Menentukan apakah transaksi online/offline
+                const isOnline = item.MID && item.MID !== '';
+                
+                // Menentukan jenis EDC
+                let edcType = null;
+                
+                if (item.TYPE_TRX) {
+                    const typeTrx = item.TYPE_TRX.toUpperCase();
+                    const kodeBank = item.KODE_BANK ? item.KODE_BANK.toUpperCase() : '';
+                    
+                    // MODIFIKASI: Jika TYPE_TRX mengandung CCR atau DEB dan KODE_BANK adalah B01, maka EDC BCA
+                    if ((typeTrx.includes('CCR') || typeTrx.includes('DEB')) && kodeBank === 'B01') {
+                        edcType = 'EDC BCA';
+                    }
+                    // Logika untuk EDC BCA
+                    else if (typeTrx === 'F' || 
+                        ((typeTrx === 'DEB' || typeTrx === 'CCR') && kodeBank === 'B10')) {
+                        edcType = 'EDC BCA';
+                    } 
+                    // Logika untuk EDC MDR
+                    else if ((typeTrx === 'DEB' || typeTrx === 'CCR') && 
+                             ['B12', 'B02', 'B03', 'B09', 'B15'].includes(kodeBank)) {
+                        edcType = 'EDC MDR';
+                    }
+                    else if (typeTrx === 'E' || typeTrx === 'Z') {
+                        edcType = 'EDC MDR';
+                    }
+                }
+                
+                // Hanya hitung transaksi yang sesuai dengan pola yang ditentukan
+                if (edcType) {
+                    if (isOnline) {
+                        groupedData[key].totalOnline++;
+                        groupedData[key].edcTypes[edcType].online++;
+                    } else {
+                        groupedData[key].totalOffline++;
+                        groupedData[key].edcTypes[edcType].offline++;
+                    }
+                }
+            });
+            
+            // Mengonversi objek groupedData menjadi array untuk ditampilkan
+            processedData = Object.values(groupedData);
+            filteredData = [...processedData];
+            
+            // Update dropdown filter toko dan tanggal
+            updateTokoFilter();
+            updateTanggalFilter();
+            
+            // Validasi data
+            validateData(processedData);
+            
+            // Menampilkan data di tabel
+            displayData(filteredData);
+            
+            // Menampilkan summary
+            updateSummary(filteredData);
+            
+            // Menampilkan grafik
+            updateCharts(filteredData);
+            
+            // Menampilkan section laporan
+            document.getElementById('reportSection').classList.remove('hidden');
+            
+            // Reset to first page
+            currentPage = 1;
+            updatePagination();
+        }
+
+        function updateTokoFilter() {
+            const tokoFilter = document.getElementById('filterToko');
+            
+            // Kosongkan dropdown kecuali opsi pertama
+            tokoFilter.innerHTML = '<option value="">Semua Toko</option>';
+            
+            // Tambahkan semua toko unik ke dropdown
+            allTokos.sort().forEach(toko => {
+                const option = document.createElement('option');
+                option.value = toko;
+                option.textContent = toko;
+                tokoFilter.appendChild(option);
+            });
+        }
+
+        function updateTanggalFilter() {
+            const tanggalFilter = document.getElementById('filterTanggal');
+            
+            // Kosongkan dropdown kecuali opsi pertama
+            tanggalFilter.innerHTML = '<option value="">Semua Tanggal</option>';
+            
+            // Tambahkan semua tanggal unik ke dropdown
+            allDates.sort((a, b) => {
+                // Konversi format DD-MM-YYYY ke YYYYMMDD untuk sorting
+                const [dayA, monthA, yearA] = a.split('-');
+                const [dayB, monthB, yearB] = b.split('-');
+                const dateA = new Date(`${yearA}-${monthA}-${dayA}`);
+                const dateB = new Date(`${yearB}-${monthB}-${dayB}`);
+                return dateB - dateA; // Urutkan dari tanggal terbaru
+            }).forEach(tanggal => {
+                const option = document.createElement('option');
+                option.value = tanggal;
+                option.textContent = tanggal;
+                tanggalFilter.appendChild(option);
+            });
+        }
+
+        function validateData(data) {
+            let isValid = true;
+            
+            data.forEach(item => {
+                const totalOnlineFromEdc = item.edcTypes['EDC MDR'].online + item.edcTypes['EDC BCA'].online;
+                const totalOfflineFromEdc = item.edcTypes['EDC MDR'].offline + item.edcTypes['EDC BCA'].offline;
+                
+                if (item.totalOnline !== totalOnlineFromEdc || item.totalOffline !== totalOfflineFromEdc) {
+                    isValid = false;
+                    console.log('Data tidak valid:', item);
+                }
+            });
+            
+            if (!isValid) {
+                document.getElementById('validationMessage').classList.remove('hidden');
+            } else {
+                document.getElementById('validationMessage').classList.add('hidden');
+            }
+            
+            return isValid;
+        }
+
+        function applyFilters() {
+            const tokoFilter = document.getElementById('filterToko').value;
+            const tanggalFilter = document.getElementById('filterTanggal').value;
+            
+            filteredData = processedData.filter(item => {
+                // Filter toko
+                if (tokoFilter && item.TOKO !== tokoFilter) {
+                    return false;
+                }
+                
+                // Filter tanggal
+                if (tanggalFilter && item.TANGGAL_TRX !== tanggalFilter) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Reset to first page when filters change
+            currentPage = 1;
+            
+            // Update display
+            displayData(filteredData);
+            updateSummary(filteredData);
+            updateCharts(filteredData);
+            updatePagination();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterToko').value = '';
+            document.getElementById('filterTanggal').value = '';
+            
+            filteredData = [...processedData];
+            
+            // Reset to first page
+            currentPage = 1;
+            
+            // Update display
+            displayData(filteredData);
+            updateSummary(filteredData);
+            updateCharts(filteredData);
+            updatePagination();
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            currentPage += direction;
+            
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            
+            displayData(filteredData);
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredData.length);
+            
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+            document.getElementById('currentItems').textContent = `${startItem}-${endItem}`;
+            document.getElementById('totalItems').textContent = filteredData.length;
+        }
+
+        function sortTable(columnIndex) {
+            // Toggle sort direction jika kolom yang sama diklik
+            if (currentSortColumn === columnIndex) {
+                sortDirection = -sortDirection;
+            } else {
+                currentSortColumn = columnIndex;
+                sortDirection = 1;
+            }
+            
+            // Update icon sort di header
+            updateSortIcons(columnIndex);
+            
+            // Sort data
+            filteredData.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch(columnIndex) {
+                    case 0: // TOKO
+                        valueA = a.TOKO;
+                        valueB = b.TOKO;
+                        break;
+                    case 1: // TANGGAL_TRX
+                        // Konversi tanggal untuk sorting yang benar
+                        const [dayA, monthA, yearA] = a.TANGGAL_TRX.split('-');
+                        const [dayB, monthB, yearB] = b.TANGGAL_TRX.split('-');
+                        valueA = new Date(`${yearA}-${monthA}-${dayA}`);
+                        valueB = new Date(`${yearB}-${monthB}-${dayB}`);
+                        break;
+                    case 2: // Total TRX Online
+                        valueA = a.totalOnline;
+                        valueB = b.totalOnline;
+                        break;
+                    case 3: // Total TRX Offline
+                        valueA = a.totalOffline;
+                        valueB = b.totalOffline;
+                        break;
+                    case 4: // Persentase Online
+                        const totalA = a.totalOnline + a.totalOffline;
+                        const totalB = b.totalOnline + b.totalOffline;
+                        valueA = totalA > 0 ? (a.totalOnline === 0 && a.totalOffline > 0 ? 
+                            -((a.totalOffline / totalA) * 100) : ((a.totalOnline / totalA) * 100)) : 0;
+                        valueB = totalB > 0 ? (b.totalOnline === 0 && b.totalOffline > 0 ? 
+                            -((b.totalOffline / totalB) * 100) : ((b.totalOnline / totalB) * 100)) : 0;
+                        break;
+                    case 5: // EDC MDR Online
+                        valueA = a.edcTypes['EDC MDR'].online;
+                        valueB = b.edcTypes['EDC MDR'].online;
+                        break;
+                    case 6: // EDC MDR Offline
+                        valueA = a.edcTypes['EDC MDR'].offline;
+                        valueB = b.edcTypes['EDC MDR'].offline;
+                        break;
+                    case 7: // Persentase Online EDC MDR
+                        const totalMdrA = a.edcTypes['EDC MDR'].online + a.edcTypes['EDC MDR'].offline;
+                        const totalMdrB = b.edcTypes['EDC MDR'].online + b.edcTypes['EDC MDR'].offline;
+                        valueA = totalMdrA > 0 ? (a.edcTypes['EDC MDR'].online / totalMdrA) * 100 : 0;
+                        valueB = totalMdrB > 0 ? (b.edcTypes['EDC MDR'].online / totalMdrB) * 100 : 0;
+                        break;
+                    case 8: // Persentase Offline EDC MDR
+                        const totalMdrOffA = a.edcTypes['EDC MDR'].online + a.edcTypes['EDC MDR'].offline;
+                        const totalMdrOffB = b.edcTypes['EDC MDR'].online + b.edcTypes['EDC MDR'].offline;
+                        valueA = totalMdrOffA > 0 ? (a.edcTypes['EDC MDR'].offline / totalMdrOffA) * 100 : 0;
+                        valueB = totalMdrOffB > 0 ? (b.edcTypes['EDC MDR'].offline / totalMdrOffB) * 100 : 0;
+                        break;
+                    case 9: // EDC BCA Online
+                        valueA = a.edcTypes['EDC BCA'].online;
+                        valueB = b.edcTypes['EDC BCA'].online;
+                        break;
+                    case 10: // EDC BCA Offline
+                        valueA = a.edcTypes['EDC BCA'].offline;
+                        valueB = b.edcTypes['EDC BCA'].offline;
+                        break;
+                    case 11: // Persentase Online EDC BCA
+                        const totalBcaA = a.edcTypes['EDC BCA'].online + a.edcTypes['EDC BCA'].offline;
+                        const totalBcaB = b.edcTypes['EDC BCA'].online + b.edcTypes['EDC BCA'].offline;
+                        valueA = totalBcaA > 0 ? (a.edcTypes['EDC BCA'].online / totalBcaA) * 100 : 0;
+                        valueB = totalBcaB > 0 ? (b.edcTypes['EDC BCA'].online / totalBcaB) * 100 : 0;
+                        break;
+                    case 12: // Persentase Offline EDC BCA
+                        const totalBcaOffA = a.edcTypes['EDC BCA'].online + a.edcTypes['EDC BCA'].offline;
+                        const totalBcaOffB = b.edcTypes['EDC BCA'].online + b.edcTypes['EDC BCA'].offline;
+                        valueA = totalBcaOffA > 0 ? (a.edcTypes['EDC BCA'].offline / totalBcaOffA) * 100 : 0;
+                        valueB = totalBcaOffB > 0 ? (b.edcTypes['EDC BCA'].offline / totalBcaOffB) * 100 : 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (valueA < valueB) return -1 * sortDirection;
+                if (valueA > valueB) return 1 * sortDirection;
+                return 0;
+            });
+            
+            // Reset to first page after sorting
+            currentPage = 1;
+            
+            // Update display
+            displayData(filteredData);
+            updatePagination();
+        }
+
+        function updateSortIcons(activeColumn) {
+            const headers = document.querySelectorAll('#reportTable th');
+            headers.forEach((header, index) => {
+                let icon = header.querySelector('i');
+                if (!icon) {
+                    icon = document.createElement('i');
+                    icon.className = 'fas fa-sort';
+                    header.appendChild(icon);
+                }
+                
+                if (index === activeColumn) {
+                    icon.className = sortDirection === 1 ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                } else {
+                    icon.className = 'fas fa-sort';
+                }
+            });
+        }
+
+        function displayData(data) {
+            const tableBody = document.querySelector('#reportTable tbody');
+            tableBody.innerHTML = '';
+            
+            // Calculate pagination
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, data.length);
+            const pageData = data.slice(startIndex, endIndex);
+            
+            pageData.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Hitung persentase online dengan logika minus
+                const totalTransactions = item.totalOnline + item.totalOffline;
+                let percentageOnline;
+                let percentageClass = '';
+                
+                if (totalTransactions > 0) {
+                    if (item.totalOnline === 0 && item.totalOffline > 0) {
+                        // MODIFIKASI: Jika online = 0 dan offline > 0, buat persentase minus
+                        percentageOnline = -((item.totalOffline / totalTransactions) * 100).toFixed(2);
+                        percentageClass = 'negative';
+                    } else {
+                        percentageOnline = ((item.totalOnline / totalTransactions) * 100).toFixed(2);
+                        
+                        // Tentukan kelas CSS untuk persentase positif
+                        if (percentageOnline >= 70) {
+                            percentageClass = 'high';
+                        } else if (percentageOnline >= 30) {
+                            percentageClass = 'medium';
+                        } else {
+                            percentageClass = 'low';
+                        }
+                    }
+                } else {
+                    percentageOnline = 0;
+                    percentageClass = 'low';
+                }
+                
+                // Hitung persentase untuk EDC MDR
+                const totalMdr = item.edcTypes['EDC MDR'].online + item.edcTypes['EDC MDR'].offline;
+                const percentageMdrOnline = totalMdr > 0 ? ((item.edcTypes['EDC MDR'].online / totalMdr) * 100).toFixed(2) : 0;
+                const percentageMdrOffline = totalMdr > 0 ? ((item.edcTypes['EDC MDR'].offline / totalMdr) * 100).toFixed(2) : 0;
+                
+                // Hitung persentase untuk EDC BCA
+                const totalBca = item.edcTypes['EDC BCA'].online + item.edcTypes['EDC BCA'].offline;
+                const percentageBcaOnline = totalBca > 0 ? ((item.edcTypes['EDC BCA'].online / totalBca) * 100).toFixed(2) : 0;
+                const percentageBcaOffline = totalBca > 0 ? ((item.edcTypes['EDC BCA'].offline / totalBca) * 100).toFixed(2) : 0;
+                
+                row.innerHTML = `
+                    <td>${item.TOKO}</td>
+                    <td>${item.TANGGAL_TRX}</td>
+                    <td>${item.totalOnline}</td>
+                    <td>${item.totalOffline}</td>
+                    <td class="percentage-cell ${percentageClass}">${percentageOnline}%</td>
+                    <td>${item.edcTypes['EDC MDR'].online}</td>
+                    <td>${item.edcTypes['EDC MDR'].offline}</td>
+                    <td class="percentage-cell ${getPercentageClass(percentageMdrOnline)}">${percentageMdrOnline}%</td>
+                    <td class="percentage-cell ${getPercentageClass(percentageMdrOffline)}">${percentageMdrOffline}%</td>
+                    <td>${item.edcTypes['EDC BCA'].online}</td>
+                    <td>${item.edcTypes['EDC BCA'].offline}</td>
+                    <td class="percentage-cell ${getPercentageClass(percentageBcaOnline)}">${percentageBcaOnline}%</td>
+                    <td class="percentage-cell ${getPercentageClass(percentageBcaOffline)}">${percentageBcaOffline}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function getPercentageClass(percentage) {
+            if (percentage >= 70) return 'high';
+            if (percentage >= 30) return 'medium';
+            return 'low';
+        }
+
+        function updateSummary(data) {
+            let totalOnline = 0;
+            let totalOffline = 0;
+            let totalEdcMdr = 0;
+            let totalEdcBca = 0;
+            
+            data.forEach(item => {
+                totalOnline += item.totalOnline;
+                totalOffline += item.totalOffline;
+                totalEdcMdr += item.edcTypes['EDC MDR'].online + item.edcTypes['EDC MDR'].offline;
+                totalEdcBca += item.edcTypes['EDC BCA'].online + item.edcTypes['EDC BCA'].offline;
+            });
+            
+            const totalTransactions = totalOnline + totalOffline;
+            let percentageOnline;
+            
+            if (totalTransactions > 0) {
+                if (totalOnline === 0 && totalOffline > 0) {
+                    // MODIFIKASI: Jika online = 0 dan offline > 0, buat persentase minus
+                    percentageOnline = -((totalOffline / totalTransactions) * 100).toFixed(2);
+                } else {
+                    percentageOnline = ((totalOnline / totalTransactions) * 100).toFixed(2);
+                }
+            } else {
+                percentageOnline = 0;
+            }
+            
+            document.getElementById('totalOnline').textContent = totalOnline;
+            document.getElementById('totalOffline').textContent = totalOffline;
+            document.getElementById('percentageOnline').textContent = `${percentageOnline}%`;
+            document.getElementById('totalEdcMdr').textContent = totalEdcMdr;
+            document.getElementById('totalEdcBca').textContent = totalEdcBca;
+        }
+
+        function updateCharts(data) {
+            // Menghitung data untuk chart transaksi (online vs offline)
+            let totalOnline = 0;
+            let totalOffline = 0;
+            let totalEdcMdr = 0;
+            let totalEdcBca = 0;
+            
+            data.forEach(item => {
+                totalOnline += item.totalOnline;
+                totalOffline += item.totalOffline;
+                totalEdcMdr += item.edcTypes['EDC MDR'].online + item.edcTypes['EDC MDR'].offline;
+                totalEdcBca += item.edcTypes['EDC BCA'].online + item.edcTypes['EDC BCA'].offline;
+            });
+            
+            // Hancurkan chart sebelumnya jika ada
+            if (transactionChartInstance) {
+                transactionChartInstance.destroy();
+            }
+            if (edcChartInstance) {
+                edcChartInstance.destroy();
+            }
+            
+            // Buat chart untuk transaksi online/offline
+            const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+            transactionChartInstance = new Chart(transactionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Online', 'Offline'],
+                    datasets: [{
+                        data: [totalOnline, totalOffline],
+                        backgroundColor: ['#3498db', '#e74c3c'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Buat chart untuk jenis EDC
+            const edcCtx = document.getElementById('edcChart').getContext('2d');
+            edcChartInstance = new Chart(edcCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['EDC MDR', 'EDC BCA'],
+                    datasets: [{
+                        label: 'Jumlah Transaksi',
+                        data: [totalEdcMdr, totalEdcBca],
+                        backgroundColor: ['#3498db', '#27ae60'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                alert('Tidak ada data untuk diekspor. Silakan proses file CSV terlebih dahulu.');
+                return;
+            }
+            
+            // Menyiapkan data untuk diekspor
+            const dataForExport = filteredData.map(item => {
+                // Hitung persentase online dengan logika minus
+                const totalTransactions = item.totalOnline + item.totalOffline;
+                let percentageOnline;
+                
+                if (totalTransactions > 0) {
+                    if (item.totalOnline === 0 && item.totalOffline > 0) {
+                        // MODIFIKASI: Jika online = 0 dan offline > 0, buat persentase minus
+                        percentageOnline = -((item.totalOffline / totalTransactions) * 100).toFixed(2);
+                    } else {
+                        percentageOnline = ((item.totalOnline / totalTransactions) * 100).toFixed(2);
+                    }
+                } else {
+                    percentageOnline = 0;
+                }
+                
+                // Hitung persentase untuk EDC MDR
+                const totalMdr = item.edcTypes['EDC MDR'].online + item.edcTypes['EDC MDR'].offline;
+                const percentageMdrOnline = totalMdr > 0 ? ((item.edcTypes['EDC MDR'].online / totalMdr) * 100).toFixed(2) : 0;
+                const percentageMdrOffline = totalMdr > 0 ? ((item.edcTypes['EDC MDR'].offline / totalMdr) * 100).toFixed(2) : 0;
+                
+                // Hitung persentase untuk EDC BCA
+                const totalBca = item.edcTypes['EDC BCA'].online + item.edcTypes['EDC BCA'].offline;
+                const percentageBcaOnline = totalBca > 0 ? ((item.edcTypes['EDC BCA'].online / totalBca) * 100).toFixed(2) : 0;
+                const percentageBcaOffline = totalBca > 0 ? ((item.edcTypes['EDC BCA'].offline / totalBca) * 100).toFixed(2) : 0;
+                
+                return {
+                    'TOKO': item.TOKO,
+                    'TANGGAL_TRX': item.TANGGAL_TRX,
+                    'Total TRX Online': item.totalOnline,
+                    'Total TRX Offline': item.totalOffline,
+                    'Persentase Online': `${percentageOnline}%`,
+                    'EDC MDR Online': item.edcTypes['EDC MDR'].online,
+                    'EDC MDR Offline': item.edcTypes['EDC MDR'].offline,
+                    'Persentase Online EDC MDR': `${percentageMdrOnline}%`,
+                    'Persentase Offline EDC MDR': `${percentageMdrOffline}%`,
+                    'EDC BCA Online': item.edcTypes['EDC BCA'].online,
+                    'EDC BCA Offline': item.edcTypes['EDC BCA'].offline,
+                    'Persentase Online EDC BCA': `${percentageBcaOnline}%`,
+                    'Persentase Offline EDC BCA': `${percentageBcaOffline}%`
+                };
+            });
+            
+            // Menghitung total
+            let totalOnline = 0;
+            let totalOffline = 0;
+            let totalEdcMdrOnline = 0;
+            let totalEdcMdrOffline = 0;
+            let totalEdcBcaOnline = 0;
+            let totalEdcBcaOffline = 0;
+            
+            dataForExport.forEach(item => {
+                totalOnline += item['Total TRX Online'];
+                totalOffline += item['Total TRX Offline'];
+                totalEdcMdrOnline += item['EDC MDR Online'];
+                totalEdcMdrOffline += item['EDC MDR Offline'];
+                totalEdcBcaOnline += item['EDC BCA Online'];
+                totalEdcBcaOffline += item['EDC BCA Offline'];
+            });
+            
+            const totalTransactions = totalOnline + totalOffline;
+            let percentageOnline;
+            
+            if (totalTransactions > 0) {
+                if (totalOnline === 0 && totalOffline > 0) {
+                    // MODIFIKASI: Jika online = 0 dan offline > 0, buat persentase minus
+                    percentageOnline = -((totalOffline / totalTransactions) * 100).toFixed(2);
+                } else {
+                    percentageOnline = ((totalOnline / totalTransactions) * 100).toFixed(2);
+                }
+            } else {
+                percentageOnline = 0;
+            }
+            
+            // Hitung persentase total untuk EDC MDR
+            const totalMdr = totalEdcMdrOnline + totalEdcMdrOffline;
+            const percentageMdrOnline = totalMdr > 0 ? ((totalEdcMdrOnline / totalMdr) * 100).toFixed(2) : 0;
+            const percentageMdrOffline = totalMdr > 0 ? ((totalEdcMdrOffline / totalMdr) * 100).toFixed(2) : 0;
+            
+            // Hitung persentase total untuk EDC BCA
+            const totalBca = totalEdcBcaOnline + totalEdcBcaOffline;
+            const percentageBcaOnline = totalBca > 0 ? ((totalEdcBcaOnline / totalBca) * 100).toFixed(2) : 0;
+            const percentageBcaOffline = totalBca > 0 ? ((totalEdcBcaOffline / totalBca) * 100).toFixed(2) : 0;
+            
+            // Validasi data sebelum ekspor
+            const isValid = validateData(processedData);
+            
+            if (!isValid) {
+                if (!confirm('Terdapat ketidaksesuaian data antara Total TRX dan detail EDC. Apakah Anda tetap ingin mengekspor data?')) {
+                    return;
+                }
+            }
+            
+            // Menambahkan baris total
+            dataForExport.push({
+                'TOKO': 'TOTAL',
+                'TANGGAL_TRX': '',
+                'Total TRX Online': totalOnline,
+                'Total TRX Offline': totalOffline,
+                'Persentase Online': `${percentageOnline}%`,
+                'EDC MDR Online': totalEdcMdrOnline,
+                'EDC MDR Offline': totalEdcMdrOffline,
+                'Persentase Online EDC MDR': `${percentageMdrOnline}%`,
+                'Persentase Offline EDC MDR': `${percentageMdrOffline}%`,
+                'EDC BCA Online': totalEdcBcaOnline,
+                'EDC BCA Offline': totalEdcBcaOffline,
+                'Persentase Online EDC BCA': `${percentageBcaOnline}%`,
+                'Persentase Offline EDC BCA': `${percentageBcaOffline}%`
+            });
+            
+            // Membuat workbook
+            const ws = XLSX.utils.json_to_sheet(dataForExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Transaksi");
+            
+            // Mengekspor ke file Excel
+            XLSX.writeFile(wb, "laporan_transaksi.xlsx");
+        }
+    </script>
+</body>
+</html>
