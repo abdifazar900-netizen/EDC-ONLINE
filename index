@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Data Transaksi CSV</title>
+    <title>Laporan EDC Online</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -464,7 +464,7 @@
     
     <div class="container">
         <div class="upload-section">
-            <h2><i class="fas fa-cloud-upload-alt"></i> Unggah File CSV</h2>
+            <h2><i class="fas fa-cloud-upload-alt"></i> Upload File IGFS</h2>
             <p>File CSV harus menggunakan pemisah | (pipe) dan data dimulai dari baris ke-7</p>
             
             <div class="file-input-wrapper">
